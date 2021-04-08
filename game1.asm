@@ -1,47 +1,155 @@
 .data	
 end_cond: .word 0
-player_tail_x: .word 3
-player_head_x: .word 5
 player_x: .word 5
 player_y: .word 15
-player_lives: .word 3
+player_health: .word 100
 screen_width: .word 32
 score: .word 0
-enemy_x: .word 32
-enemy_y: .word 15
+enemy_x: .word 30
+enemy_y: .word 15 # doesn't matter; cuz it's randomized anyways
 enemy_speed: .word 1
-enemy_pause: .word 50
-game_speed: .word 40
-direction: .word 115 #initially moving up
-# direction variable
-# 119 - moving up - W
-# 115 - moving down - S
-# 97 - moving left - A
-# 100 - moving right - D
-# numbers are selected due to ASCII characters
+enemy_pause: .word 120
+game_speed: .word 400
+collision: .word 300
+direction: .word 115 # doesn't matter; cuz it'll affect when an input is entered
+# input variable - ASCII code
+# 119 - moving up - w
+# 115 - moving down - s
+# 97 - moving left - a
+# 100 - moving right - d
+# 112 - restart - p
 red: .word 0xff0000
-green: .word 0x00ff00
-bllue: .word 0x0000ff
+grey: .word 0x9F9F9F
+blue: .word 0x0080ff
+d_blue: .word 0x0050A0
 
 .eqv	BASE_ADDRESS	0x10008000
 .text globl main
 
-main:	li $t0, BASE_ADDRESS # $t0 stores the base address for display
+main:	
+######################################################
+# Fill Screen to Black, for reset
+######################################################
+	lw $a0, screen_width
+	li $a1, 0x000000
+	mul $a2, $a0, $a0 #total number of pixels on screen
+	mul $a2, $a2, 4 #align addresses
+	add $a2, $a2, $gp #add base of gp
+	add $a0, $gp, $zero #loop counter
+fill_black:
+	beq $a0, $a2, fill_red
+	sw $a1, 0($a0) #store color
+	addiu $a0, $a0, 4 #increment counter
+	j fill_black
+fill_red:
+	lw $a0, screen_width
+	lw $a1, red
+	mul $a2, $a0, $a0 #total number of pixels on screen
+	mul $a2, $a2, 4 #align addresses
+	add $a2, $a2, $gp #add base of gp
+	add $a0, $gp, $zero #loop counter
+fill_red_cont:	
+	beq $a0, $a2, init
+	sw $a1, 0($a0)
+	addiu $a0, $a0, 128
+	j fill_red_cont
+	
+init:	sw, $zero, end_cond
+	li $t0, 5
+	sw $t0, player_x
+	li $t0 15
+	sw $t0, player_y
+	li $t0, 100
+	sw $t0, player_health
+	li $t0, 32 
+	sw $t0, screen_width
+	sw $zero, score
+	li $t0, 30
+	sw $t0, enemy_x
+	sw $zero, enemy_y
+	li $t0, 1
+	sw $t0, enemy_speed
+	li $t0, 500
+	sw $t0, enemy_pause
+	li $t0, 40
+	sw $t0, game_speed
+	li $t0, 115
+	sw $t0, direction
+	
+clear_reg:
+	li $v0, 0
+	li $a0, 0
+	li $a1, 0
+	li $a2, 0
+	li $a3, 0
+	li $t0, 0
+	li $t1, 0
+	li $t2, 0
+	li $t3, 0
+	li $t4, 0
+	li $t5, 0
+	li $t6, 0
+	li $t7, 0
+	li $t8, 0
+	li $t9, 0
+	li $s0, 0
+	li $s1, 0
+	li $s2, 0
+	li $s3, 0
+	li $s4, 0		
+
+######################################################################	
 	# draw inital player
-	lw $a0, player_x #load x coordinate
-	lw $a1, player_y #load y coordinate
-	jal CoordinateToAddress #get screen coordinates
-	move $a0, $v0 #copy coordinates to $a0
-	li $a1, 0xC6FF00 #store color into $a1
-	jal DrawPixel	#draw color at pixel
+	lw $t2, d_blue
+	lw $t3, red
+	lw $a0, player_x # load player's x coordinate
+	lw $a1, player_y # load player's y coordinate
+	jal CoordinateToAddress
+	move $a0, $v0
+	move $a1, $t2 # set color as blue
+	jal DrawPixel # drawing head
+	
+	addi $a0, $a0, -4 # set address for middle of player
+	move $a1, $t2 # set color as dark blue
+	jal DrawPixel # drawing body
+	
+	addi $a0, $a0, -4 # set address for tail of player
+	move $a1, $t3 # set color as red
+	jal DrawPixel # drawing tail
+######################################################################	
+	# rng - generate random number within (0-32)
+	li $v0, 42 
+	li $a0, 0
+	li $a1, 32
+	syscall
+	
+	sw $a0, enemy_y
+	
 	# load enemy ships
 	lw $a0, enemy_x
 	lw $a1, enemy_y
 	jal CoordinateToAddress
 	move $a0, $v0
-	lw $a1, red
-	jal DrawPixel
-	 
+	lw $a1, grey
+	jal DrawPixel # drawing OO
+		      #		XO
+	
+	addi $a0, $a0, -128
+	li $a1, 0xFFFFFF
+	jal DrawPixel # drawing XO
+		      # 	XO
+		      
+	addi $a0, $a0, 4
+	lw $a1, grey
+	jal DrawPixel # drawing XX
+		      #		XO
+
+	addi $a0, $a0, 128
+	jal DrawPixel # drawing XX
+		      # 	XX
+		      
+######################################################################	
+
 game_loop:
 	lw $t1, end_cond
 	beq $t1, 1, end_game
@@ -54,6 +162,7 @@ game_loop:
 	bne $t1, 1, update_enemy
 	lw $t1, 4($t0)
 	sw $t1, direction
+	beq $t1, 112, restart
 	lw $a0, 4($t0) # store new direction based on input
 	lw $a1, player_x # save player's current x
 	lw $a2, player_y # save player's current y
@@ -61,41 +170,131 @@ game_loop:
 	
 	beq $v0, 1, erase # erase previous position if valid
 
-return_here:
+redraw_player:
 	lw $a0, player_x
 	lw $a1, player_y
 	jal CoordinateToAddress
 	move $a0, $v0 # set address
-	li $a1, 0xC6FF00 # set color
-	jal DrawPixel # draw new pixel
-
+	lw $a1, d_blue # set color
+	jal DrawPixel # redrawing head
+	addi $a0, $a0, -4
+	lw $a1, d_blue
+	jal DrawPixel # redraing body
+	addi $a0, $a0, -4
+	lw $a1, red
+	jal DrawPixel # redrawing tail 
+	
 update_enemy: 
-	lw $a0, enemy_pause
-	jal Pause
+	# erasing enemy at old position
 	lw $a0, enemy_x
 	lw $a1, enemy_y
 	jal CoordinateToAddress
 	move $a0, $v0
 	li $a1, 0x000000
-	jal DrawPixel
+	jal DrawPixel  # erasing XX
+		       # 	 OX
+	
+	addi $a0, $a0, -128
+	jal DrawPixel # erasing OX
+		      #		OX
+	
+	addi $a0, $a0, 4
+	jal DrawPixel # erasing OO
+		      #		OX
+	
+	addi $a0, $a0, 128
+	jal DrawPixel # erasing OO
+		      # 	OO
+		      
 	lw $t3, enemy_speed
-	lw $t4, red
+	lw $t4, grey
 	lw $a0, enemy_x
 	lw $a1, enemy_y
 	sub $a0, $a0, $t3
-	bge $a0, 0, continue
-
+	jal check_enemy_collision
+	lw $a0, enemy_x
+	lw $a1, enemy_y
+	sub $a0, $a0, $t3
+	beq $v0, 1, animate_player_collision
+	bgt $a0, 0, continue
 respawn:
-	li $a0, 32
+	# rng - generate random number within (0-32)
+	li $v0, 42 
+	li $a0, 0
+	li $a1, 32
+	syscall
 	
-continue: 
+	sw $a0, enemy_y
+	
+	li $a0, 30
+	j continue
+
+animate_player_collision: 
+	lw $a0, player_x
+	addi $a0, $a0, -2
+	lw $a1, player_y
+	jal CoordinateToAddress
+	move $a0, $v0
+	li $a1, 0xFFFFFF
+	jal DrawPixel
+	move $t1, $a0
+	lw $a0, collision
+	jal Pause
+	move $a0, $t1
+	lw $a1, red
+	jal DrawPixel
+	j respawn
+
+continue:
+	# redrawing enemy at new postion 
 	sw $a0, enemy_x
+	lw $a1, enemy_y
 	jal CoordinateToAddress
 	move $a0, $v0
 	move $a1, $t4
-	jal DrawPixel
+	jal DrawPixel # redrawing OO
+		      #		  XO
 	
+	addi $a0, $a0, -128
+	li $a1, 0xFFFFFF
+	jal DrawPixel # redrawing XO
+		      #		  XO
+	
+	addi $a0, $a0, 4
+	lw $a1, grey
+	jal DrawPixel # redrawing XX
+		      #		  XO
+	
+	addi $a0, $a0, 128
+	jal DrawPixel # redrawing XX
+		      #		  XX
 	j game_loop
+###################################################
+#	$a0 - enemy's x-coordinate
+#	$a1 - enemy's y-coordinate 
+###################################################
+#	$v0 - return whether there's a collision
+###################################################
+check_enemy_collision: 
+	lw $t1, player_x
+	lw $t2, player_y
+	beq $a0, $t1, check_y_collision
+	j return_no_collision
+
+check_y_collision:
+	beq $a1, $t2, return_collision
+	addi $a1, $a1, -1
+	beq $a1, $t2, return_collision
+	j return_no_collision
+
+return_collision:
+	li $v0, 1
+	jr $ra
+
+return_no_collision:
+	li $v0, 0
+	jr $ra
+####################################################
 
 check_bounds:
 	beq $a0, 119, check_up # going up
@@ -110,17 +309,17 @@ check_up:
 
 check_down:
 	addi $t0, $a2, 2
-	ble $t0, 32, valid
+	blt $t0, 32, valid
 	j not_valid
 
 check_left:
-	addi $t0, $a1, -2
+	addi $t0, $a1, -4
 	bgez $t0, valid
 	j not_valid
 
 check_right:
 	addi $t0, $a1, 2
-	ble $t0, 32, valid
+	blt $t0, 32, valid
 	j not_valid
 
 valid:	li $v0, 1
@@ -135,10 +334,13 @@ erase:	lw $a0, player_x # save player's current x
 	jal CoordinateToAddress
 	move $a0, $v0
 	li $a1, 0x000000
-	jal DrawPixel
-	j update_position
+	jal DrawPixel # erasing head
+	addi $a0, $a0, -4
+	jal DrawPixel # erasing body
+	addi $a0, $a0, -4
+	jal DrawPixel # erasing tail
 
-update_position:
+update_player:
 	lw $t1, player_x # save player's current x
 	lw $t2, player_y # save player's current y
 	lw $t3, direction # get new dir
@@ -168,7 +370,7 @@ move_right:
 	j end_move
 
 end_move:
-	j return_here
+	j redraw_player
 ##################################################################
 #CoordinatesToAddress Function
 # $a0 -> x coordinate
@@ -192,14 +394,31 @@ CoordinateToAddress:
 # no return value
 ##################################################################
 DrawPixel:
-	sw $a1, ($a0) 	#fill the coordinate with specified colors
+	sw $a1, 0($a0) 	#fill the coordinate with specified colors
 	jr $ra		#return
+
+##################################################################
+#Animate Collision Function
+# $a0 -> x-coordinate of player
+# $a1 -> y-coordiante of player
+##################################################################
+# no return value
+##################################################################
+animate_collision:
+	add $a0, $a0, -2
+	jal CoordinateToAddress
+	move $a0, $v0
+	li $a1, 0x000000
+	jal DrawPixel
+	lw, $a1, red
+	jal DrawPixel
+	jr $ra
 
 ##################################################################
 #Draw Function
 # $a0 -> x Coordinate
 # $a1 -> y Coordinate
-# $a2 -> new direction
+# $a2 -> 1 for collision detected; 0 for no collision
 ##################################################################
 # returns the previous position in address
 ##################################################################
@@ -233,6 +452,8 @@ Pause:
 	syscall
 	jr $ra
 
+restart:
+	j main
 end_game: 
 	li $v0, 10
 	syscall
