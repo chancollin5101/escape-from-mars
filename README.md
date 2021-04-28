@@ -1,6 +1,6 @@
 # Escape From Mars
 
-This is a horizontal scrolling game made in Mips assembly code emulated using the Mars Mips Simulator. It requires the Keyboard and Display MMIO and the Bitmap Display to be connected to MIPS.
+This is a simple game made in Mips assembly code emulated using the Mars Mips Simulator. It requires the Keyboard and Display MMIO and the Bitmap Display to be connected to MIPS.
 
 Bitmap Display Settings:
 ```
