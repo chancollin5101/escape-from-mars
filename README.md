@@ -17,4 +17,4 @@ Bitmap Display Settings:
 
 This game is similar to the game Space Invaders, in the sense that the player is controling a spaceship across space and there are a lot of obstacles/enemy ships along the way. The theme of the game is escaping from an explosion from Mars. The player can use WASD for directional input, p to restart and q to quit the game at the Game Over stage. 
 
-Demo: [Demo Link](https://www.youtube.com/watch?v=SOpnTmNc1zI&ab_channel=CollinChan)
+Demo: [Demo Link](https://www.youtube.com/watch?v=SOpnTmNc1zI&ab_channel=CollinChan){:target="_blank"}
