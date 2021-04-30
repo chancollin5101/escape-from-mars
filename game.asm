@@ -1,37 +1,3 @@
-#####################################################################
-#
-# CSCB58 Winter 2021 Assembly Final Project
-# University of Toronto, Scarborough
-# 
-# Student: Collin Chan, Student Number: 1006200889, UTorID: chancol7
-# 
-# Bitmap Display Configuration:
-# - Unit height in pixels: 8 (update this as needed)
-# - Display width in pixels: 256 (update this as needed)
-# - Display height in pixels: 256 (update this as needed)
-# - Base Address for Display: 0x10008000 ($gp)
-#
-# Which milestoneshave beenreached in this submission?
-# (See the assignment handout for descriptions of the milestones)
-# - Milestone 1/2/3/4 (choose the one the applies)
-#
-# Which approved features have been implemented for milestone 4?
-# (See the assignment handout for the list of additional features)
-# 1. Smooth Graphics
-# 2. Increasing Difficulty as the game progresses
-# 3. A Scoring System; 10 points per wave and -5 points per collision
-#
-# Link to video demonstration for final submission:
-# - https://youtu.be/SOpnTmNc1zI
-#
-# Are you OK with us sharing the video with people outside course staff?
-# - yes
-#
-# Any additional information that the TA needs to know:
-# - forgot the mention in the video but you can press p to restart
-#   and q to quit the game when you are at the game over screen
-#
-#####################################################################
 .data	
 end_cond: .word 0
 player_x: .word 5
